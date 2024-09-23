@@ -1,0 +1,30 @@
+table.daext-items .icons-container{
+    width: 48px !important;
+    min-width: 48px !important;
+}
+
+.sidebar-container {
+    margin-left: 20px;
+    float: right;
+    width: 280px;
+}
+
+#featured-news-form-container {
+    width: calc(100% - 300px);
+    float: left;
+}
+
+.daext-form-container {
+    width: 100%;
+}
+
+@media all and (max-width: 1322px) {
+    #featured-news-form-container{
+        float: none;
+    }
+    .sidebar-container{
+        float: none;
+        margin-left: 0;
+        margin-top: 19px;
+    }
+}

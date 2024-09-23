@@ -1,0 +1,64 @@
+table.daext-items .icons-container{
+    width: 76px !important;
+    min-width: 76px !important;
+}
+
+.display-none{
+    display: none;
+}
+
+table.daext-items .menu-icon.update{
+    margin-right: 8px !important;
+}
+
+table.daext-items .update{
+    background: url("../img/update.png") 0 0 no-repeat !important;
+}
+
+table.daext-items .update:hover{
+    background: url("../img/update-hover.png") 0 0 no-repeat !important;
+}
+
+.empty-icon-container{
+    width: 20px !important;
+    height: 20px !important;
+    float: left !important;
+    margin: 4px 8px 4px 0 !important;
+}
+
+table.daext-form .image-uploader .selected-image{
+    width: auto !important;
+    height: 40px !important;
+}
+
+.expand-icon{
+    background: url("../img/arrow-down-f7f7f7.png") 0 0 no-repeat !important;
+    width: 20px !important;
+    height: 20px !important;
+    float: right;
+    margin: 2px 0;
+    cursor: pointer;
+}
+
+.group-trigger{
+    background: #f7f7f7;
+    cursor: pointer;
+}
+
+.group-title{
+    font-weight: 600 !important;
+    color: #333 !important;
+    text-align: left !important;
+}
+
+.expand-icon.arrow-down{
+    background: url("../img/arrow-up-f7f7f7.png") 0 0 no-repeat !important;
+}
+
+.source-chart-configuration,
+.behavior-chart-configuration,
+.style-chart-configuration,
+.performance-chart-configuration,
+.section-advanced{
+    display: none;
+}
