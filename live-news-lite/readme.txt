@@ -1,14 +1,14 @@
-=== Live News ===
+=== Live News - Responsive News Ticker ===
 Contributors: DAEXT
-Tags: news ticker, ticker, news, live, live news ticker, news scroller, television news ticker, digital signage, television, breaking news, scrolling text, breaking news ticker
+Tags: news ticker, ticker, news, live, breaking news
 Donate link: https://daext.com
 Requires at least: 5.0
-Tested up to: 6.5
+Tested up to: 6.6.2
 Requires PHP: 7.2
 Stable tag: 1.08
 License: GPLv3
 
-The Live News Lite plugin generates a fixed news ticker that you can use to communicate the latest news, financial news, weather warnings, election results, sports results, etc.
+Generate a news ticker to communicate the latest updates, including financial news, weather warnings, election results, sports scores, and more.
 
 == Description ==
 The Live News Lite plugin generates a fixed news ticker that you can use to communicate the latest news, financial news, weather warnings, election results, sports results, etc.
