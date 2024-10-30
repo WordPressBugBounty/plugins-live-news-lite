@@ -1,19 +1,32 @@
-(function($) {
+/**
+ * This file is used to handle initialize Select2 in the Featured News menu.
+ *
+ * @package live-news-lite
+ */
 
-  'use strict';
+(function ($) {
 
-  $(document).ready(function() {
+	'use strict';
 
-    'use strict';
+	$( document ).ready(
+		function () {
 
-    $('#daext-filter-form select').on('change', function() {
+			'use strict';
 
-      'use strict';
+			initSelect2();
 
-      $('#daext-filter-form').submit();
+		}
+	);
 
-    });
+	/**
+	 * Initialize the select2 fields.
+	 */
+	function initSelect2() {
 
-  });
+		'use strict';
 
-}(jQuery));
+		$( '#ticker_id' ).select2();
+
+	}
+
+}(window.jQuery));

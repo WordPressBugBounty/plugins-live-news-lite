@@ -1,62 +1,73 @@
-jQuery(document).ready(function($) {
+/**
+ * This file is used to handle initialize Select2, update the default colors, and initialize the color picker in the
+ * Sliding News menu.
+ *
+ * @package live-news-lite
+ */
 
-    'use strict';
+jQuery( document ).ready(
+	function ($) {
 
-    //Handle changes of the news ticker filter
-    $('#daext-filter-form select').on('change', function() {
+		$( '#ticker_id' ).select2();
 
-        'use strict';
+		initWpColorPickerFields();
 
-        $('#daext-filter-form').submit();
+		$( '#ticker_id' ).change(
+			function () {
 
-    });
+				daextlnl_update_default_colors();
 
-    //do not set the default values if we are editing an existing sliding news
-    if ( $( "#update-id" ).length ){return;}
+			}
+		);
 
-    daextlnl_update_default_colors();
+		/*
+		* Update the default 'Text Color', 'Text Color Hover' and 'Background Color' based on the values available on the
+		* related ticker
+		*/
+		function daextlnl_update_default_colors(){
 
-    $('#ticker-id').change(function(){
+			var ticker_id = parseInt( $( '#ticker_id' ).val(), 10 );
 
-        'use strict';
+			// Prepare input for the ajax request.
+			var data = {
+				"action": "update_default_colors",
+				"security": window.DAEXTLNL_PARAMETERS.nonce,
+				"ticker_id": ticker_id
+			};
 
-        daextlnl_update_default_colors();
+			// Ajax.
+			$.post(
+				window.DAEXTLNL_PARAMETERS.ajaxUrl,
+				data,
+				function (result_json) {
 
-    });
+					var data_obj = $.parseJSON( result_json );
 
-    /*
-     * Update the default 'Text Color', 'Text Color Hover' and 'Background Color' based on the values available on the
-     * related ticker
-     */
-    function daextlnl_update_default_colors(){
+					$( '#text_color' ).iris( 'color', data_obj.sliding_news_color );
+					$( '#text_color_hover' ).iris( 'color', data_obj.sliding_news_color_hover );
+					$( '#background_color' ).iris( 'color', data_obj.sliding_news_background_color );
 
-        'use strict';
+				}
+			);
 
-        //When the menu doesn't have the #ticker-id field available return
-        if(!$('#ticker-id').length){return;}
+		}
 
-        let ticker_id = parseInt($('#ticker-id').val(), 10);
+		/**
+		 * Initialize the wp color picker fields.
+		 */
+		function initWpColorPickerFields(){
 
-        //prepare input for the ajax request
-        let data = {
-            "action": "update_default_colors",
-            "security": daextlnl_nonce,
-            "ticker_id": ticker_id
-        };
+			'use strict';
 
-        //ajax
-        $.post(daextlnl_ajax_url, data, function(result_json) {
+			const config = {
+				'palettes': []
+			};
 
-            'use strict';
+			$( '#text_color' ).wpColorPicker( config );
+			$( '#text_color_hover' ).wpColorPicker( config );
+			$( '#background_color' ).wpColorPicker( config );
 
-            let data_obj = JSON.parse(result_json);
+		}
 
-            $('#text-color').iris('color', data_obj.sliding_news_color);
-            $('#text-color-hover').iris('color', data_obj.sliding_news_color_hover);
-            $('#background-color').iris('color', data_obj.sliding_news_background_color);
-
-        });
-
-    }
-
-});
+	}
+);

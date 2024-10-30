@@ -1,25 +1,62 @@
-jQuery(document).ready(function($) {
+/**
+ * This file is used to handle initialize Select2 and initialize the color picker in the Tickers menu.
+ *
+ * @package live-news-lite
+ */
 
-    remove_border_last_cell_chart();
+(function ($) {
 
-    //.group-trigger -> click - EVENT LISTENER
-    $(document.body).on('click', '.group-trigger' , function(){
+	'use strict';
 
-        //open and close the various sections of the chart area
-        let target = $(this).attr('data-trigger-target');
-        $('.' + target).toggle(0);
-        $(this).find('.expand-icon').toggleClass('arrow-down');
+	$( document ).ready(
+		function () {
 
-        remove_border_last_cell_chart();
+			'use strict';
 
-    });
+			initSelect2();
 
-    /*
-     Remove the bottom border on the cells of the last row of the chart section
-     */
-    function remove_border_last_cell_chart(){
-        $('table.daext-form tr > *').css('border-bottom-width', '1px');
-        $('table.daext-form tr:visible:last > *').css('border-bottom-width', '0');
-    }
+			initWpColorPickerFields();
 
-});
+		}
+	);
+
+	/**
+	 * Initialize the select2 fields.
+	 */
+	function initSelect2() {
+
+		'use strict';
+
+		$( '#target' ).select2();
+		$( '#source' ).select2();
+		$( '#category' ).select2();
+		$( '#open-news-as-default' ).select2();
+		$( '#hide_featured_news' ).select2();
+		$( '#clock_source' ).select2();
+		$( '#hide_featured_news' ).select2();
+
+	}
+
+	/**
+	 * Initialize the wp color picker fields.
+	 */
+	function initWpColorPickerFields(){
+
+		'use strict';
+
+		const config = {
+			'palettes': []
+		};
+
+		$( '#featured_news_title_color' ).wpColorPicker( config );
+		$( '#featured_news_title_color_hover' ).wpColorPicker( config );
+		$( '#featured_news_excerpt_color' ).wpColorPicker( config );
+		$( '#sliding_news_color' ).wpColorPicker( config );
+		$( '#sliding_news_color_hover' ).wpColorPicker( config );
+		$( '#clock_text_color' ).wpColorPicker( config );
+		$( '#featured_news_background_color' ).wpColorPicker( config );
+		$( '#sliding_news_background_color' ).wpColorPicker( config );
+
+	}
+
+}(window.jQuery));

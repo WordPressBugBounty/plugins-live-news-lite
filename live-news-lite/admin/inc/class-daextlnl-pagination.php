@@ -1,6 +1,8 @@
 <?php
 /**
  * This file is used to handle the pagination in the back-end menus.
+ *
+ * @package live-news-lite
  */
 
 /**
@@ -8,6 +10,13 @@
  *  pagination.
  */
 class Daextlnl_Pagination {
+
+	/**
+	 * An instance of the shared class.
+	 *
+	 * @var Daextlnl_Shared|null
+	 */
+	private $shared = null;
 
 	/**
 	 * Total number of items.
@@ -52,9 +61,20 @@ class Daextlnl_Pagination {
 	private $parameter_name = 'p';
 
 	/**
+	 * Constructor.
+	 *
+	 * @param Daextlnl_Shared $shared Instance of the shared class.
+	 */
+	public function __construct( $shared ) {
+
+		// Assign an instance of the plugin info.
+		$this->shared = $shared;
+	}
+
+	/**
 	 * Set the total number of items.
 	 *
-	 * @param $value
+	 * @param int $value The total number of items.
 	 */
 	public function set_total_items( $value ) {
 		$this->total_items = intval( $value, 10 );
@@ -63,7 +83,7 @@ class Daextlnl_Pagination {
 	/**
 	 * Set the number of items to show per page.
 	 *
-	 * @param $value
+	 * @param int $value The number of items to show per page.
 	 */
 	public function set_record_per_page( $value ) {
 		$this->record_per_page = intval( $value, 10 );
@@ -72,7 +92,7 @@ class Daextlnl_Pagination {
 	/**
 	 * Set the page url
 	 *
-	 * @param $value
+	 * @param string $value The page URL.
 	 */
 	public function set_target_page( $value ) {
 		$this->target_page = $value;
@@ -84,11 +104,12 @@ class Daextlnl_Pagination {
 	 */
 	public function set_current_page() {
 
-		if ( isset( $_GET[ $this->parameter_name ] ) ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce non-necessary for data visualization.
+		$page_number = isset( $_GET[ $this->parameter_name ] ) ? intval( $_GET[ $this->parameter_name ], 10 ) : null;
 
-			$page_number = intval( $_GET[ $this->parameter_name ], 10 );
+		if ( ! is_null( $page_number ) ) {
 
-			if ( $page_number > 0 and $page_number <= ceil( $this->total_items / $this->record_per_page ) ) {
+			if ( $page_number > 0 && $page_number <= ceil( $this->total_items / $this->record_per_page ) ) {
 				$this->current_page = $page_number;
 			} else {
 				$this->current_page = 1;
@@ -103,7 +124,7 @@ class Daextlnl_Pagination {
 	/**
 	 * Set the number of adjacent pages to show on each side of the current page inside the pagination.
 	 *
-	 * @param int $value
+	 * @param int $value The number of adjacent pages to show on each side of the current page inside the pagination.
 	 *
 	 * @return void
 	 */
@@ -111,7 +132,13 @@ class Daextlnl_Pagination {
 		$this->adjacents = intval( $value, 10 );
 	}
 
-	// Assing a different $_GET parameter instead of p
+	/**
+	 * Assing a different $_GET parameter instead of p.
+	 *
+	 * @param string $value The parameter name.
+	 *
+	 * @return void
+	 */
 	public function set_parameter_name( $value = '' ) {
 		$this->parameter_name = $value;
 	}
@@ -122,10 +149,11 @@ class Daextlnl_Pagination {
 	public function show() {
 
 		// Setup page vars for display.
-		$prev      = $this->current_page - 1;// previous page
-		$next      = $this->current_page + 1;// next page
-		$last_page = intval( ceil( $this->total_items / $this->record_per_page ), 10 );// last page
-		$lpm1      = $last_page - 1;// last page minus 1
+		$first_page = 1;// First page.
+		$prev       = $this->current_page - 1;// Previous page.
+		$next       = $this->current_page + 1;// Next page.
+		$last_page  = intval( ceil( $this->total_items / $this->record_per_page ), 10 );// Last page.
+		$lpm1       = $last_page - 1;// Last page minus 1.
 
 		// Generate the pagination if there is more than one page.
 		if ( $last_page > 1 ) {
@@ -135,100 +163,48 @@ class Daextlnl_Pagination {
 
 				if ( $this->current_page > 1 ) {
 
+					// If the current page is > 1 the "First Page" button is clickable.
+					$this->display_link( '&#171', $this->get_pagenum_link( $first_page ) );
+
 					// If the current page is > 1 the "Previous" button is clickable.
-					$this->display_link( '&#171', $this->get_pagenum_link( $prev ) );
+					$this->display_link( '&#139', $this->get_pagenum_link( $prev ) );
 
 				} else {
 
-					// If the current page is not > 1 the previous button is not clickable.
+					// If the current page is > 1 the "First Page" button is clickable.
 					$this->display_link( '&#171' );
 
+					// If the current page is not > 1 the previous button is not clickable.
+					$this->display_link( '&#139' );
+
 				}
 			}
 
-			// Generate the buttons of all the pages.
-			if ( $last_page < 7 + ( $this->adjacents * 2 ) ) {
-
-				// Not enough pages to bother breaking it up
-
-				for ( $counter = 1; $counter <= $last_page; $counter++ ) {
-					if ( $counter === $this->current_page ) {
-						$this->display_link( $counter );
-					} else {
-						$this->display_link( $counter, $this->get_pagenum_link( $counter ) );
-					}
-				}
-			} else {
-
-				// Enough pages to hide some.
-
-				if ( $this->current_page < 1 + ( $this->adjacents * 2 ) ) {
-
-					// When the selected page is near the beginning hide pages at the end.
-
-					for ( $counter = 1; $counter < 4 + ( $this->adjacents * 2 ); $counter++ ) {
-
-						if ( $counter === $this->current_page ) {
-							$this->display_link( $counter );
-						} else {
-							$this->display_link( $counter, $this->get_pagenum_link( $counter ) );
-						}
-					}
-
-					echo '<span>...</span>';
-					$this->display_link( $lpm1, $this->get_pagenum_link( $lpm1 ) );
-					$this->display_link( $last_page, $this->get_pagenum_link( $last_page ) );
-
-				} elseif ( $last_page - ( $this->adjacents * 2 ) > $this->current_page && $this->current_page > ( $this->adjacents * 2 ) ) {
-
-					// When the selected page is in the middle hide some pages form the front and some page from the back.
-
-					$this->display_link( '1', $this->get_pagenum_link( 1 ) );
-					$this->display_link( '2', $this->get_pagenum_link( 2 ) );
-					echo '<span>...</span>';
-
-					for ( $counter = $this->current_page - $this->adjacents; $counter <= $this->current_page + $this->adjacents; $counter++ ) {
-
-						if ( $counter === $this->current_page ) {
-							$this->display_link( $counter );
-						} else {
-							$this->display_link( $counter, $this->get_pagenum_link( $counter ) );
-						}
-					}
-
-					echo '<span>...</span>';
-					$this->display_link( $lpm1, $this->get_pagenum_link( $lpm1 ) );
-					$this->display_link( $last_page, $this->get_pagenum_link( $last_page ) );
-
-				} else {
-
-					// When the selected page is near the end hide pages at the beginning.
-
-					$this->display_link( '1', $this->get_pagenum_link( 1 ) );
-					$this->display_link( '2', $this->get_pagenum_link( 2 ) );
-					echo '<span>...</span>';
-					for ( $counter = $last_page - ( 2 + ( $this->adjacents * 2 ) ); $counter <= $last_page; $counter++ ) {
-
-						if ( $counter === $this->current_page ) {
-							$this->display_link( $counter );
-						} else {
-							$this->display_link( $counter, $this->get_pagenum_link( $counter ) );
-						}
-					}
-				}
-			}
+			echo '<div class="daextlnl-crud-table-controls__pagination-paging-text">' .
+				esc_html( $this->current_page ) .
+				'&nbsp' .
+				esc_html__( 'of', 'live-news-lite') .
+				'&nbsp' .
+				esc_html( $last_page ) .
+				'</div>';
 
 			// Generate the "Next" button.
 			if ( $this->current_page ) {
 
-				if ( $this->current_page < $counter - 1 ) {
+				if ( $this->current_page < $last_page ) {
 
 					// If the current page is not the last page the "Next" button is clickable.
-					$this->display_link( '&#187', $this->get_pagenum_link( $next ) );
+					$this->display_link( '&#155', $this->get_pagenum_link( $next ) );
+
+					// If the current page is not the last page the "Last Page" button is clickable.
+					$this->display_link( '&#187', $this->get_pagenum_link( $last_page ) );
 
 				} else {
 
 					// If the current page is the last page the "Next" button is not clickable.
+					$this->display_link( '&#155' );
+
+					// If the current page is not the last page the "Last Page" button is not clickable.
 					$this->display_link( '&#187' );
 
 				}
@@ -239,33 +215,76 @@ class Daextlnl_Pagination {
 	/**
 	 * Return the complete url associated with this page id.
 	 *
-	 * @param $id The page id.
+	 * @param int $id The page id.
 	 *
 	 * @return string The URL associated with the id.
 	 */
-	private function get_pagenum_link( $id ) {
+	public function get_pagenum_link( $id ) {
 
-		// search: s ----------------------------------------------------------------------------------------------------
-		if ( isset( $_GET['s'] ) ) {
-			$s      = sanitize_text_field( $_GET['s'] );
-			$filter = '&s=' . $s;
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Nonce non-necessary for data visualization.
+
+		// filter op --------------------------------------------------------------------------------------------------.
+		if ( isset( $_GET['op'] ) ) {
+			$op = sanitize_text_field( wp_unslash( $_GET['op'] ) );
+			if ( trim( $op ) !== 'all' && ( intval( $op, 10 ) === 0 || intval( $op, 10 ) === 1 )
+				&& strlen( trim( $op ) > 0 ) ) {
+				$filter = '&op=' . intval( $op, 10 );
+			} else {
+				$filter = '';
+			}
 		} else {
 			$filter = '';
 		}
 
-		// filter cf
-		if ( isset( $_GET['cf'] ) ) {
-			$cf = sanitize_text_field( $_GET['cf'] );
-			if ( $cf !== 'all' ) {
-				$filter .= '&cf=' . intval( $_GET['cf'], 10 );
+		// sort: sb, or -----------------------------------------------------------------------------------------------.
+		$sort = '';
+		if ( isset( $_GET['sb'] ) ) {
+			$sb = sanitize_text_field( wp_unslash( $_GET['sb'] ) );
+			switch ( $sb ) {
+				case 'pd':
+				case 'ti':
+				case 'mi':
+				case 'ai':
+				case 'ii':
+				case 'pt':
+				case 'cl':
+				case 'op':
+					$sort .= '&sb=' . $sb;
+					break;
 			}
 		}
 
-		if ( false === strpos( $this->target_page, '?' ) ) {
-			return $this->target_page . '?' . $this->parameter_name . '=' . $id . $filter;
-		} else {
-			return $this->target_page . '&' . $this->parameter_name . '=' . $id . $filter;
+		if ( isset( $_GET['or'] ) ) {
+			$sort .= '&or=' . intval( $_GET['or'], 10 );
 		}
+
+		// search: s --------------------------------------------------------------------------------------------------.
+		if ( isset( $_GET['s'] ) ) {
+			$s = sanitize_text_field( wp_unslash( $_GET['s'] ) );
+			if ( strlen( trim( $s ) ) > 0 ) {
+				$search = '&s=' . $s;
+			} else {
+				$search = '';
+			}
+		} else {
+			$search = '';
+		}
+
+		// custom filter (used in AIL menu).
+		if ( isset( $_GET['cf'] ) ) {
+			$cf = intval( $_GET['cf'], 10 );
+			if ( 'all' !== $cf ) {
+				$filter .= '&cf=' . $cf;
+			}
+		}
+
+		if ( strpos( $this->target_page, '?' ) === false ) {
+			return esc_url( $this->target_page . '?' . $this->parameter_name . '=' . $id . $filter . $sort . $search );
+		} else {
+			return esc_url( $this->target_page . '&' . $this->parameter_name . '=' . $id . $filter . $sort . $search );
+		}
+
+		// phpcs:enable
 	}
 
 	/**
@@ -303,24 +322,45 @@ class Daextlnl_Pagination {
 
 			// Non-clickable and disabled links.
 
-			if ( '&#171' === $text ) {
-				echo '<a href="javascript: void(0)" class="disabled">&#171</a>';
+			if ( '&#139' === $text ) {
+				echo '<a href="javascript: void(0)" class="disabled">';
+				$this->shared->echo_icon_svg( 'chevron-left' );
+				echo '</a>';
+			} elseif ( '&#171' === $text ) {
+				echo '<a href="javascript: void(0)" class="disabled">';
+				$this->shared->echo_icon_svg( 'chevron-left-double' );
+				echo '</a>';
+			} elseif ( '&#155' === $text ) {
+				echo '<a href="javascript: void(0)" class="disabled">';
+				$this->shared->echo_icon_svg( 'chevron-right' );
+				echo '</a>';
 			} elseif ( '&#187' === $text ) {
-				echo '<a href="javascript: void(0)" class="disabled">&#187</a>';
+				echo '<a href="javascript: void(0)" class="disabled">';
+				$this->shared->echo_icon_svg( 'chevron-right-double' );
+				echo '</a>';
 			} else {
 				echo '<a href="javascript: void(0)" class="disabled">' . esc_html( $text ) . '</a>';
 			}
-		} else {
 
 			// Clickable and active links.
-
-			if ( '&#171' === $text ) {
-				echo '<a href="' . esc_url( $url ) . '">&#171</a>';
-			} elseif ( '&#187' === $text ) {
-				echo '<a href="' . esc_url( $url ) . '">&#187</a>';
-			} else {
-				echo '<a href="' . esc_url( $url ) . '">' . esc_html( $text ) . '</a>';
-			}
+		} elseif ( '&#139' === $text ) {
+			echo '<a href="' . esc_url( $url ) . '">';
+			$this->shared->echo_icon_svg( 'chevron-left' );
+			echo '</a>';
+		} elseif ( '&#171' === $text ) {
+			echo '<a href="' . esc_url( $url ) . '">';
+			$this->shared->echo_icon_svg( 'chevron-left-double' );
+			echo '</a>';
+		} elseif ( '&#155' === $text ) {
+			echo '<a href="' . esc_url( $url ) . '">';
+			$this->shared->echo_icon_svg( 'chevron-right' );
+			echo '</a>';
+		} elseif ( '&#187' === $text ) {
+			echo '<a href="' . esc_url( $url ) . '">';
+			$this->shared->echo_icon_svg( 'chevron-right-double' );
+			echo '</a>';
+		} else {
+			echo '<a href="' . esc_url( $url ) . '">' . esc_html( $text ) . '</a>';
 		}
 	}
 }

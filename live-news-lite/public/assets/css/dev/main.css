@@ -1,0 +1,217 @@
+/* Reset ------------------------------------------------------------------------------------------------------------ */
+
+#daextlnl-container,
+#daextlnl-container *,
+#daextlnl-open{
+	
+	/* this is useful to prevent div highlighting */
+	-webkit-user-select: none; /* Chrome/Safari */        
+	-moz-user-select: none; /* Firefox */
+	-ms-user-select: none; /* IE10+ */
+	-khtml-user-select: none; /* webkit browsers */
+	-o-user-select: none;/* not yet implemented */
+	user-select: none;/* not yet implemented */	
+	-webkit-touch-callout: none;
+	
+    -webkit-box-sizing: content-box !important;
+    -moz-box-sizing: content-box !important;
+    box-sizing: content-box !important;  
+	
+    box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+    text-shadow: none !important;
+    
+    border: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+
+    letter-spacing: normal !important;
+    
+}
+
+/* Container -------------------------------------------------------------------------------------------------------- */
+
+#daextlnl-container{
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    min-height: 140px;
+    width: 100%;
+    z-index: 999999999998;
+}
+
+/* Featured News ---------------------------------------------------------------------------------------------------- */
+
+#daextlnl-featured-container{
+    min-height: 100px;
+    padding: 0 80px !important;
+}
+
+#daextlnl-featured-title-container{
+    min-height: 50px;
+    text-align: left !important;
+    overflow: visible;
+}
+
+#daextlnl-featured-title, #daextlnl-featured-title a{
+    min-height: 50px;
+    line-height: 50px;
+    color: #eee;
+    display: inline;
+    text-transform: uppercase;
+    font-weight: 700 !important;
+    text-align: left !important;
+}
+
+#daextlnl-featured-title a, .daextlnl-slider-single-news a{
+    text-decoration: none !important;
+}
+
+#daextlnl-featured-title a:hover{
+    text-decoration: none !important;
+}
+
+#daextlnl-featured-title a:focus{
+    outline: 0 !important;
+}
+
+.daextlnl-slider-single-news a:hover{
+    text-decoration: none !important;
+}
+
+.daextlnl-slider-single-news a:focus{
+    outline: 0 !important;
+}
+
+#daextlnl-container #daextlnl-featured-title,
+#daextlnl-container #daextlnl-featured-title a,
+#daextlnl-container #daextlnl-featured-excerpt{
+    text-shadow: 2.5px 4.33px 5px rgba( 0, 0, 0, 0.30 ) !important;
+}
+
+#daextlnl-featured-excerpt-container{
+    min-height: 50px;
+    text-align: left !important;
+}
+
+#daextlnl-featured-excerpt{
+    text-align: left !important;
+    min-height: 50px;
+    line-height: 50px;
+    width: 100%;
+    color: #eee;
+    display: inline;
+    font-weight: 600;
+}
+
+/* Sliding News ----------------------------------------------------------------------------------------------------- */
+
+#daextlnl-slider{
+    width: 1000000px;
+    height: 40px;
+    position: relative;
+    text-transform: uppercase;
+
+}
+#daextlnl-slider-floating-content{
+    height: 40px;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+#daextlnl-slider-floating-content .daextlnl-slider-single-news{
+    height: 40px;
+    line-height: 40px;
+    float: left;
+    font-size: 28px;
+    font-weight: 700 !important;
+}
+
+#daextlnl-slider-floating-content .daextlnl-slider-single-news:last-child{
+    margin-right: 0 !important;
+}
+
+#daextlnl-slider-floating-content .daextlnl-slider-single-news a{
+    font-weight: 700 !important;
+}
+
+#daextlnl-container .daextlnl-image-before{
+    height: 40px !important;
+    padding: 0 !important;
+    display: block !important;
+    float: left !important;
+}
+
+#daextlnl-container .daextlnl-image-after{
+    height: 40px !important;
+    padding: 0 !important;
+    display: block !important;
+    float: left !important;
+}
+
+.daextlnl-slider-single-news a{
+    display: block !important;
+    float: left !important;
+}
+
+.daextlnl-slider-single-news span{
+    display: block !important;
+    float: left !important;
+}
+
+/* Clock ------------------------------------------------------------------------------------------------------------ */
+
+#daextlnl-clock{
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: auto;
+    padding: 0 4px !important;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    font-size: 28px;
+    font-weight: 700;
+    z-index: 999999999999;
+    background-size: 80px 40px !important;
+}
+
+#daextlnl-container #daextlnl-clock, #daextlnl-container .daextlnl-slider-single-news{
+     text-shadow: none !important;
+}
+
+/* Close Button ----------------------------------------------------------------------------------------------------- */
+#daextlnl-close{
+    cursor: pointer;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 80px;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    z-index: 999999999999;
+    background-size: 80px 40px !important;
+}
+
+/* Open Button ------------------------------------------------------------------------------------------------------ */
+#daextlnl-open{
+    cursor: pointer;
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    width: 80px;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    z-index: 999999999999;
+    background-size: 80px 40px !important;
+}
+
+/* Set transition on all the links ---------------------------------------------------------------------------------- */
+#daextlnl-container a{
+    -webkit-transition: .3s all ease-in-out;
+    -moz-transition: .3s all ease-in-out;
+    transition: .3s all ease-in-out;    
+}

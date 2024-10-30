@@ -3,9 +3,9 @@ Contributors: DAEXT
 Tags: news ticker, ticker, news, live, breaking news
 Donate link: https://daext.com
 Requires at least: 5.0
-Tested up to: 6.6.2
+Tested up to: 6.7
 Requires PHP: 7.2
-Stable tag: 1.08
+Stable tag: 1.09
 License: GPLv3
 
 Generate a news ticker to communicate the latest updates, including financial news, weather warnings, election results, sports scores, and more.
@@ -23,7 +23,6 @@ The [Pro Version](https://daext.com/live-news/) of this plugin, allows you to:
 
 * Automatically generate news based on the posts
 * Automatically generate the news based on a specified RSS feed (E.g., Your own RSS feed, the RSS feed of a tv channel, the RSS feed of a radio station.)
-* Automatically generate the news based on a specified Twitter account
 * Control the speed and the delay of the sliding news with advanced options of the news ticker
 
 #### Features
@@ -121,6 +120,16 @@ With this procedure you will be able to perform a **Single Site Activation** in 
 3. Click on the **Activate** button (just below the name of the plugin)
 
 == Changelog ==
+
+= 1.09 =
+
+*October 30, 2024*
+
+* Major back-end UI update.
+* Refactoring.
+* Tools menu added.
+* Maintenance menu added.
+* Two new plugin options have been added.
 
 = 1.08 =
 

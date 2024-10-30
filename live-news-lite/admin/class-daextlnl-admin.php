@@ -1,6 +1,6 @@
 <?php
 /**
- * This class is used to work with the administrative side of WordPress.
+ * This file includes the class Daextlnl_Admin.
  *
  * @package live-news-lite
  */
@@ -10,54 +10,178 @@
  */
 class Daextlnl_Admin {
 
+	/**
+	 * Instance of the singleton class.
+	 *
+	 * @var null
+	 */
 	protected static $instance = null;
-	private $shared            = null;
 
-	private $screen_id_tickers       = null;
-	private $screen_id_featured      = null;
-	private $screen_id_sliding       = null;
-	private $screen_id_export_to_pro = null;
-	private $screen_id_help          = null;
-	private $screen_id_pro_version   = null;
-	private $screen_id_options       = null;
+	/**
+	 * Store an instance of the shared class.
+	 *
+	 * @var Daextlnl_Shared|null
+	 */
+	private $shared = null;
 
+	/**
+	 * Screen id for the tickers page.
+	 *
+	 * @var null
+	 */
+	private $screen_id_tickers = null;
+
+	/**
+	 * Screen id for the featured page.
+	 *
+	 * @var null
+	 */
+	private $screen_id_featured_news = null;
+
+	/**
+	 * Screen id for the sliding page.
+	 *
+	 * @var null
+	 */
+	private $screen_id_sliding_news = null;
+
+	/**
+	 * Screen id for the tools page.
+	 *
+	 * @var null
+	 */
+	private $screen_id_tools = null;
+
+	/**
+	 * Screen id for the maintenance page.
+	 *
+	 * @var null
+	 */
+	private $screen_id_maintenance = null;
+
+	/**
+	 * Screen id for the options page.
+	 *
+	 * @var null
+	 */
+	private $screen_id_options = null;
+
+	/**
+	 * Instance of the class used to generate the back-end menus.
+	 *
+	 * @var null
+	 */
+	private $menu_elements = null;
+
+	/**
+	 * Construct.
+	 */
 	private function __construct() {
 
-		// assign an instance of the shared class.
+		// Assign an instance of the shared class.
 		$this->shared = Daextlnl_Shared::get_instance();
 
 		// Load admin stylesheets and JavaScript.
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_styles' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
 
-		// Write in back-end head.
-		add_action( 'admin_head', array( $this, 'wr_admin_head' ) );
-
 		// Add the admin menu.
 		add_action( 'admin_menu', array( $this, 'me_add_admin_menu' ) );
 
-		// Load the options API registrations and callbacks.
-		add_action( 'admin_init', array( $this, 'op_register_options' ) );
-
-		// this hook is triggered during the creation of a new blog.
+		// This hook is triggered during the creation of a new blog.
 		add_action( 'wpmu_new_blog', array( $this, 'new_blog_create_options_and_tables' ), 10, 6 );
 
-		// this hook is triggered during the deletion of a blog.
+		// This hook is triggered during the deletion of a blog.
 		add_action( 'delete_blog', array( $this, 'delete_blog_delete_options_and_tables' ), 10, 1 );
 
-		// Export XML controller.
-		add_action( 'init', array( $this, 'export_xml_controller' ) );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce non-necessary for menu selection.
+		$page_query_param = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : null;
 
-		// Change the WordPress footer text on all the plugin menus.
-		add_filter( 'admin_footer_text', array( $this, 'change_footer_text' ) );
+		// Require and instantiate the class used to register the menu options.
+		if ( null !== $page_query_param ) {
+
+			$config = array(
+				'admin_toolbar' => array(
+					'items'      => array(
+						array(
+							'link_text' => __( 'Tickers', 'live-news-lite'),
+							'link_url'  => admin_url( 'admin.php?page=daextlnl-tickers' ),
+							'icon'      => 'notification-text',
+							'menu_slug' => 'daextlnl-ticker',
+						),
+						array(
+							'link_text' => __( 'Featured News', 'live-news-lite'),
+							'link_url'  => admin_url( 'admin.php?page=daextlnl-featured-news' ),
+							'icon'      => 'award-02',
+							'menu_slug' => 'daextlnl-featured-news',
+						),
+						array(
+							'link_text' => __( 'Sliding News', 'live-news-lite'),
+							'link_url'  => admin_url( 'admin.php?page=daextlnl-sliding-news' ),
+							'icon'      => 'passcode',
+							'menu_slug' => 'daextlnl-sliding-news',
+						),
+					),
+					'more_items' => array(
+						array(
+							'link_text' => __( 'Tools', 'live-news-lite'),
+							'link_url'  => admin_url( 'admin.php?page=daextlnl-tools' ),
+							'pro_badge' => false,
+						),
+						array(
+							'link_text' => __( 'Maintenance', 'live-news-lite'),
+							'link_url'  => admin_url( 'admin.php?page=daextlnl-maintenance' ),
+							'pro_badge' => false,
+						),
+						array(
+							'link_text' => __( 'Options', 'live-news-lite'),
+							'link_url'  => admin_url( 'admin.php?page=daextlnl-options' ),
+							'pro_badge' => false,
+						),
+					),
+				),
+			);
+
+			// The parent class.
+			require_once $this->shared->get( 'dir' ) . 'admin/inc/menu/class-daextlnl-menu-elements.php';
+
+			// Use the correct child class based on the page query parameter.
+			if ( 'daextlnl-tickers' === $page_query_param ) {
+				require_once $this->shared->get( 'dir' ) . 'admin/inc/menu/child/class-daextlnl-tickers-menu-elements.php';
+				$this->menu_elements = new Daextlnl_Tickers_Menu_Elements( $this->shared, $page_query_param, $config );
+			}
+			if ( 'daextlnl-featured-news' === $page_query_param ) {
+				require_once $this->shared->get( 'dir' ) . 'admin/inc/menu/child/class-daextlnl-featured-news-menu-elements.php';
+				$this->menu_elements = new Daextlnl_Featured_News_Menu_Elements( $this->shared, $page_query_param, $config );
+			}
+			if ( 'daextlnl-sliding-news' === $page_query_param ) {
+				require_once $this->shared->get( 'dir' ) . 'admin/inc/menu/child/class-daextlnl-sliding-news-menu-elements.php';
+				$this->menu_elements = new Daextlnl_Sliding_News_Menu_Elements( $this->shared, $page_query_param, $config );
+			}
+
+			if ( 'daextlnl-tools' === $page_query_param ) {
+				require_once $this->shared->get( 'dir' ) . 'admin/inc/menu/child/class-daextlnl-tools-menu-elements.php';
+				$this->menu_elements = new Daextlnl_Tools_Menu_Elements( $this->shared, $page_query_param, $config );
+			}
+			if ( 'daextlnl-maintenance' === $page_query_param ) {
+				require_once $this->shared->get( 'dir' ) . 'admin/inc/menu/child/class-daextlnl-maintenance-menu-elements.php';
+				$this->menu_elements = new Daextlnl_Maintenance_Menu_Elements( $this->shared, $page_query_param, $config );
+			}
+			if ( 'daextlnl-options' === $page_query_param ) {
+				require_once $this->shared->get( 'dir' ) . 'admin/inc/menu/child/class-daextlnl-options-menu-elements.php';
+				$this->menu_elements = new Daextlnl_Options_Menu_Elements( $this->shared, $page_query_param, $config );
+			}
+		}
 	}
 
 	/**
 	 * Return an instance of this class.
+	 *
+	 * @return self|null
 	 */
 	public static function get_instance() {
 
-		if ( null == self::$instance ) {
+		if ( null === self::$instance ) {
 			self::$instance = new self();
 		}
 
@@ -65,179 +189,322 @@ class Daextlnl_Admin {
 	}
 
 	/**
-	 * Write in the admin head.
+	 * Enqueue admin-specific styles.
+	 *
+	 * @return void
 	 */
-	public function wr_admin_head() {
-
-		echo '<script type="text/javascript">';
-		echo 'var daextlnl_ajax_url = "' . admin_url( 'admin-ajax.php' ) . '";';
-		echo 'var daextlnl_nonce = "' . wp_create_nonce( 'live-news' ) . '";';
-		echo 'var daextlnl_admin_url ="' . get_admin_url() . '";';
-		echo '</script>';
-	}
-
 	public function enqueue_admin_styles() {
 
 		$screen = get_current_screen();
 
-		// menu tickers.
-		if ( $screen->id == $this->screen_id_tickers ) {
+		// Menu tickers.
+		if ( $screen->id === $this->screen_id_tickers ) {
+
 			wp_enqueue_style( 'wp-color-picker' );
-			wp_enqueue_style( $this->shared->get( 'slug' ) . '-menu-sliding', $this->shared->get( 'url' ) . 'admin/assets/css/menu-tickers.css', array(), $this->shared->get( 'ver' ) );
-			wp_enqueue_style( $this->shared->get( 'slug' ) . '-framework-menu', $this->shared->get( 'url' ) . 'admin/assets/css/framework/menu.css', array(), $this->shared->get( 'ver' ) );
-			wp_enqueue_style( $this->shared->get( 'slug' ) . '-jquery-ui-tooltip', $this->shared->get( 'url' ) . 'admin/assets/css/jquery-ui-tooltip.css', array(), $this->shared->get( 'ver' ) );
-			wp_enqueue_style( $this->shared->get( 'slug' ) . '-chosen', $this->shared->get( 'url' ) . 'admin/assets/inc/chosen/chosen-min.css', array(), $this->shared->get( 'ver' ) );
-			wp_enqueue_style( $this->shared->get( 'slug' ) . '-chosen-custom', $this->shared->get( 'url' ) . 'admin/assets/css/chosen-custom.css', array(), $this->shared->get( 'ver' ) );
-		}
 
-		// menu featured.
-		if ( $screen->id == $this->screen_id_featured ) {
-			wp_enqueue_style( $this->shared->get( 'slug' ) . '-menu-featured', $this->shared->get( 'url' ) . 'admin/assets/css/menu-featured.css', array(), $this->shared->get( 'ver' ) );
-			wp_enqueue_style( $this->shared->get( 'slug' ) . '-framework-menu', $this->shared->get( 'url' ) . 'admin/assets/css/framework/menu.css', array(), $this->shared->get( 'ver' ) );
-			wp_enqueue_style( $this->shared->get( 'slug' ) . '-jquery-ui-tooltip', $this->shared->get( 'url' ) . 'admin/assets/css/jquery-ui-tooltip.css', array(), $this->shared->get( 'ver' ) );
-			wp_enqueue_style( $this->shared->get( 'slug' ) . '-chosen', $this->shared->get( 'url' ) . 'admin/assets/inc/chosen/chosen-min.css', array(), $this->shared->get( 'ver' ) );
-			wp_enqueue_style( $this->shared->get( 'slug' ) . '-chosen-custom', $this->shared->get( 'url' ) . 'admin/assets/css/chosen-custom.css', array(), $this->shared->get( 'ver' ) );
-		}
+			wp_enqueue_style( $this->shared->get( 'slug' ) . '-framework-menu', $this->shared->get( 'url' ) . 'admin/assets/css/framework-menu/main.css', array(), $this->shared->get( 'ver' ) );
 
-		// menu sliding.
-		if ( $screen->id == $this->screen_id_sliding ) {
-			wp_enqueue_style( 'wp-color-picker' );
-			wp_enqueue_style( $this->shared->get( 'slug' ) . '-menu-sliding', $this->shared->get( 'url' ) . 'admin/assets/css/menu-sliding.css', array(), $this->shared->get( 'ver' ) );
-			wp_enqueue_style( $this->shared->get( 'slug' ) . '-framework-menu', $this->shared->get( 'url' ) . 'admin/assets/css/framework/menu.css', array(), $this->shared->get( 'ver' ) );
-			wp_enqueue_style( $this->shared->get( 'slug' ) . '-jquery-ui-tooltip', $this->shared->get( 'url' ) . 'admin/assets/css/jquery-ui-tooltip.css', array(), $this->shared->get( 'ver' ) );
-			wp_enqueue_style( $this->shared->get( 'slug' ) . '-chosen', $this->shared->get( 'url' ) . 'admin/assets/inc/chosen/chosen-min.css', array(), $this->shared->get( 'ver' ) );
-			wp_enqueue_style( $this->shared->get( 'slug' ) . '-chosen-custom', $this->shared->get( 'url' ) . 'admin/assets/css/chosen-custom.css', array(), $this->shared->get( 'ver' ) );
-		}
-
-		// menu help.
-		if ( $screen->id == $this->screen_id_help ) {
+			// jQuery UI Dialog.
 			wp_enqueue_style(
-				$this->shared->get( 'slug' ) . '-menu-help',
-				$this->shared->get( 'url' ) . 'admin/assets/css/menu-help.css',
+				$this->shared->get( 'slug' ) . '-jquery-ui-dialog',
+				$this->shared->get( 'url' ) . 'admin/assets/css/jquery-ui-dialog.css',
 				array(),
 				$this->shared->get( 'ver' )
 			);
-		}
 
-		// menu pro version
-		if ( $screen->id == $this->screen_id_pro_version ) {
+			// Select2.
 			wp_enqueue_style(
-				$this->shared->get( 'slug' ) . '-menu-pro-version',
-				$this->shared->get( 'url' ) . 'admin/assets/css/menu-pro-version.css',
+				$this->shared->get( 'slug' ) . '-select2',
+				$this->shared->get( 'url' ) . 'admin/assets/inc/select2/css/select2.min.css',
 				array(),
 				$this->shared->get( 'ver' )
 			);
+
 		}
 
-		// menu options.
-		if ( $screen->id == $this->screen_id_options ) {
-			wp_enqueue_style( $this->shared->get( 'slug' ) . '-framework-options', $this->shared->get( 'url' ) . 'admin/assets/css/framework/options.css', array(), $this->shared->get( 'ver' ) );
-			wp_enqueue_style( $this->shared->get( 'slug' ) . '-jquery-ui-tooltip', $this->shared->get( 'url' ) . 'admin/assets/css/jquery-ui-tooltip.css', array(), $this->shared->get( 'ver' ) );
-			wp_enqueue_style( $this->shared->get( 'slug' ) . '-chosen', $this->shared->get( 'url' ) . 'admin/assets/inc/chosen/chosen-min.css', array(), $this->shared->get( 'ver' ) );
-			wp_enqueue_style( $this->shared->get( 'slug' ) . '-chosen-custom', $this->shared->get( 'url' ) . 'admin/assets/css/chosen-custom.css', array(), $this->shared->get( 'ver' ) );
+		// Menu featured.
+		if ( $screen->id === $this->screen_id_featured_news ) {
+
+			wp_enqueue_style( $this->shared->get( 'slug' ) . '-framework-menu', $this->shared->get( 'url' ) . 'admin/assets/css/framework-menu/main.css', array(), $this->shared->get( 'ver' ) );
+
+			// jQuery UI Dialog.
+			wp_enqueue_style(
+				$this->shared->get( 'slug' ) . '-jquery-ui-dialog',
+				$this->shared->get( 'url' ) . 'admin/assets/css/jquery-ui-dialog.css',
+				array(),
+				$this->shared->get( 'ver' )
+			);
+
+			// Select2.
+			wp_enqueue_style(
+				$this->shared->get( 'slug' ) . '-select2',
+				$this->shared->get( 'url' ) . 'admin/assets/inc/select2/css/select2.min.css',
+				array(),
+				$this->shared->get( 'ver' )
+			);
+
+		}
+
+		// Menu sliding.
+		if ( $screen->id === $this->screen_id_sliding_news ) {
+
+			wp_enqueue_style( 'wp-color-picker' );
+
+			wp_enqueue_style( $this->shared->get( 'slug' ) . '-framework-menu', $this->shared->get( 'url' ) . 'admin/assets/css/framework-menu/main.css', array(), $this->shared->get( 'ver' ) );
+
+			// jQuery UI Dialog.
+			wp_enqueue_style(
+				$this->shared->get( 'slug' ) . '-jquery-ui-dialog',
+				$this->shared->get( 'url' ) . 'admin/assets/css/jquery-ui-dialog.css',
+				array(),
+				$this->shared->get( 'ver' )
+			);
+
+			// Select2.
+			wp_enqueue_style(
+				$this->shared->get( 'slug' ) . '-select2',
+				$this->shared->get( 'url' ) . 'admin/assets/inc/select2/css/select2.min.css',
+				array(),
+				$this->shared->get( 'ver' )
+			);
+
+		}
+
+		// Menu Tools.
+		if ( $screen->id === $this->screen_id_tools ) {
+
+			wp_enqueue_style( $this->shared->get( 'slug' ) . '-framework-menu', $this->shared->get( 'url' ) . 'admin/assets/css/framework-menu/main.css', array(), $this->shared->get( 'ver' ) );
+
+		}
+
+		// Menu Maintenance.
+		if ( $screen->id === $this->screen_id_maintenance ) {
+
+			wp_enqueue_style( $this->shared->get( 'slug' ) . '-framework-menu', $this->shared->get( 'url' ) . 'admin/assets/css/framework-menu/main.css', array(), $this->shared->get( 'ver' ) );
+
+			// Select2.
+			wp_enqueue_style(
+				$this->shared->get( 'slug' ) . '-select2',
+				$this->shared->get( 'url' ) . 'admin/assets/inc/select2/css/select2.min.css',
+				array(),
+				$this->shared->get( 'ver' )
+			);
+
+			// jQuery UI Dialog.
+			wp_enqueue_style(
+				$this->shared->get( 'slug' ) . '-jquery-ui-dialog',
+				$this->shared->get( 'url' ) . 'admin/assets/css/jquery-ui-dialog.css',
+				array(),
+				$this->shared->get( 'ver' )
+			);
+
+		}
+
+		// Menu options.
+		if ( $screen->id === $this->screen_id_options ) {
+
+			wp_enqueue_style( $this->shared->get( 'slug' ) . '-framework-menu', $this->shared->get( 'url' ) . 'admin/assets/css/framework-menu/main.css', array( 'wp-components' ), $this->shared->get( 'ver' ) );
+
 		}
 	}
 
 	/**
 	 * Enqueue admin-specific javascript.
+	 *
+	 * @return void
 	 */
 	public function enqueue_admin_scripts() {
 
+		$wp_localize_script_data = array(
+			'deleteText' => esc_html__( 'Delete', 'live-news-lite'),
+			'cancelText' => esc_html__( 'Cancel', 'live-news-lite'),
+		);
+
 		$screen = get_current_screen();
 
-		// menu tickers.
-		if ( $screen->id == $this->screen_id_tickers ) {
-			wp_enqueue_script( 'jquery-ui-tooltip' );
-			wp_enqueue_script( $this->shared->get( 'slug' ) . '-menu-tickers', $this->shared->get( 'url' ) . 'admin/assets/js/menu-tickers.js', 'jquery', $this->shared->get( 'ver' ) );
-			wp_enqueue_script( $this->shared->get( 'slug' ) . '-jquery-ui-tooltip-init', $this->shared->get( 'url' ) . 'admin/assets/js/jquery-ui-tooltip-init.js', 'jquery', $this->shared->get( 'ver' ) );
-			wp_enqueue_script( $this->shared->get( 'slug' ) . '-wp-color-picker-init', $this->shared->get( 'url' ) . 'admin/assets/js/wp-color-picker-init.js', array( 'wp-color-picker' ), false, true );
-			wp_enqueue_script( $this->shared->get( 'slug' ) . '-chosen', $this->shared->get( 'url' ) . 'admin/assets/inc/chosen/chosen-min.js', 'jquery', $this->shared->get( 'ver' ) );
-			wp_enqueue_script( $this->shared->get( 'slug' ) . '-jquery-ui-chosen-init-tickers', $this->shared->get( 'url' ) . 'admin/assets/js/chosen-init-tickers.js', 'jquery', $this->shared->get( 'ver' ) );
+		// General.
+		wp_enqueue_script( $this->shared->get( 'slug' ) . '-general', $this->shared->get( 'url' ) . 'admin/assets/js/general.js', array( 'jquery' ), $this->shared->get( 'ver' ), true );
+
+		// Menu tickers.
+		if ( $screen->id === $this->screen_id_tickers ) {
+
+			wp_enqueue_script(
+				$this->shared->get( 'slug' ) . '-select2',
+				$this->shared->get( 'url' ) . 'admin/assets/inc/select2/js/select2.min.js',
+				array( 'jquery' ),
+				$this->shared->get( 'ver' ),
+				true
+			);
+
+			wp_enqueue_script( $this->shared->get( 'slug' ) . '-menu', $this->shared->get( 'url' ) . 'admin/assets/js/framework-menu/menu.js', array( 'jquery' ), $this->shared->get( 'ver' ), true );
+
+			wp_enqueue_script( $this->shared->get( 'slug' ) . '-menu-tickers', $this->shared->get( 'url' ) . 'admin/assets/js/menu-tickers.js', array( 'jquery', $this->shared->get( 'slug' ) . '-select2', 'wp-color-picker' ), $this->shared->get( 'ver' ), true );
+			wp_localize_script( $this->shared->get( 'slug' ) . '-menu-tickers', 'objectL10n', $wp_localize_script_data );
+
 			wp_enqueue_media();
-			wp_enqueue_script( $this->shared->get( 'slug' ) . '-media-uploader', $this->shared->get( 'url' ) . 'admin/assets/js/media-uploader.js', 'jquery', $this->shared->get( 'ver' ) );
+			wp_enqueue_script( $this->shared->get( 'slug' ) . '-media-uploader', $this->shared->get( 'url' ) . 'admin/assets/js/media-uploader.js', 'jquery', $this->shared->get( 'ver' ), true );
+
 		}
 
-		// menu featured.
-		if ( $screen->id == $this->screen_id_featured ) {
-			wp_enqueue_script( 'jquery-ui-tooltip' );
-			wp_enqueue_script( $this->shared->get( 'slug' ) . '-jquery-ui-tooltip-init', $this->shared->get( 'url' ) . 'admin/assets/js/jquery-ui-tooltip-init.js', 'jquery', $this->shared->get( 'ver' ) );
-			wp_enqueue_script( $this->shared->get( 'slug' ) . '-chosen', $this->shared->get( 'url' ) . 'admin/assets/inc/chosen/chosen-min.js', 'jquery', $this->shared->get( 'ver' ) );
-			wp_enqueue_script( $this->shared->get( 'slug' ) . '-jquery-ui-chosen-init-featured', $this->shared->get( 'url' ) . 'admin/assets/js/chosen-init-featured.js', 'jquery', $this->shared->get( 'ver' ) );
-			wp_enqueue_script( $this->shared->get( 'slug' ) . '-menu-featured', $this->shared->get( 'url' ) . 'admin/assets/js/menu-featured.js', 'jquery', $this->shared->get( 'ver' ) );
+		// Menu featured.
+		if ( $screen->id === $this->screen_id_featured_news ) {
+
+			wp_enqueue_script(
+				$this->shared->get( 'slug' ) . '-select2',
+				$this->shared->get( 'url' ) . 'admin/assets/inc/select2/js/select2.min.js',
+				array( 'jquery' ),
+				$this->shared->get( 'ver' ),
+				true
+			);
+
+			wp_enqueue_script( $this->shared->get( 'slug' ) . '-menu', $this->shared->get( 'url' ) . 'admin/assets/js/framework-menu/menu.js', array( 'jquery' ), $this->shared->get( 'ver' ), true );
+
+			wp_enqueue_script( $this->shared->get( 'slug' ) . '-menu-featured', $this->shared->get( 'url' ) . 'admin/assets/js/menu-featured.js', array( 'jquery', $this->shared->get( 'slug' ) . '-select2' ), $this->shared->get( 'ver' ), true );
+			wp_localize_script( $this->shared->get( 'slug' ) . '-menu-featured', 'objectL10n', $wp_localize_script_data );
+
 		}
 
-		// menu sliding.
-		if ( $screen->id == $this->screen_id_sliding ) {
-			wp_enqueue_script( 'jquery-ui-tooltip' );
-			wp_enqueue_script( $this->shared->get( 'slug' ) . '-jquery-ui-tooltip-init', $this->shared->get( 'url' ) . 'admin/assets/js/jquery-ui-tooltip-init.js', 'jquery', $this->shared->get( 'ver' ) );
-			wp_enqueue_script( $this->shared->get( 'slug' ) . '-chosen', $this->shared->get( 'url' ) . 'admin/assets/inc/chosen/chosen-min.js', 'jquery', $this->shared->get( 'ver' ) );
-			wp_enqueue_script( $this->shared->get( 'slug' ) . '-jquery-ui-chosen-init-sliding', $this->shared->get( 'url' ) . 'admin/assets/js/chosen-init-sliding.js', 'jquery', $this->shared->get( 'ver' ) );
-			wp_enqueue_script( $this->shared->get( 'slug' ) . '-wp-color-picker-init', $this->shared->get( 'url' ) . 'admin/assets/js/wp-color-picker-init.js', array( 'wp-color-picker' ), false, true );
-			wp_enqueue_script( $this->shared->get( 'slug' ) . '-menu-sliding', $this->shared->get( 'url' ) . 'admin/assets/js/menu-sliding.js', 'jquery', $this->shared->get( 'ver' ) );
+		// Menu sliding.
+		if ( $screen->id === $this->screen_id_sliding_news ) {
+
+			// Store the JavaScript parameters in the window.DAEXTDAEXTLNL_PARAMETERS object.
+			$initialization_script  = 'window.DAEXTLNL_PARAMETERS = {';
+			$initialization_script .= 'ajaxUrl: "' . admin_url( 'admin-ajax.php' ) . '",';
+			$initialization_script .= 'nonce: "' . wp_create_nonce( 'live-news-lite' ) . '"';
+			$initialization_script .= '};';
+
+			wp_enqueue_script(
+				$this->shared->get( 'slug' ) . '-select2',
+				$this->shared->get( 'url' ) . 'admin/assets/inc/select2/js/select2.min.js',
+				array( 'jquery' ),
+				$this->shared->get( 'ver' ),
+				true
+			);
+
+			wp_enqueue_script( $this->shared->get( 'slug' ) . '-menu', $this->shared->get( 'url' ) . 'admin/assets/js/framework-menu/menu.js', array( 'jquery' ), $this->shared->get( 'ver' ), true );
+
+			wp_enqueue_script( $this->shared->get( 'slug' ) . '-menu-sliding', $this->shared->get( 'url' ) . 'admin/assets/js/menu-sliding.js', array( 'jquery', $this->shared->get( 'slug' ) . '-select2', 'wp-color-picker' ), $this->shared->get( 'ver' ), true );
+			wp_localize_script( $this->shared->get( 'slug' ) . '-menu-sliding', 'objectL10n', $wp_localize_script_data );
+
+			wp_add_inline_script( $this->shared->get( 'slug' ) . '-menu-sliding', $initialization_script, 'before' );
+
 			wp_enqueue_media();
-			wp_enqueue_script( $this->shared->get( 'slug' ) . '-media-uploader', $this->shared->get( 'url' ) . 'admin/assets/js/media-uploader.js', 'jquery', $this->shared->get( 'ver' ) );
+			wp_enqueue_script( $this->shared->get( 'slug' ) . '-media-uploader', $this->shared->get( 'url' ) . 'admin/assets/js/media-uploader.js', 'jquery', $this->shared->get( 'ver' ), true );
+
 		}
 
-		// menu options.
-		if ( $screen->id == $this->screen_id_options ) {
-			wp_enqueue_script( 'jquery-ui-tooltip' );
-			wp_enqueue_script( $this->shared->get( 'slug' ) . '-jquery-ui-tooltip-init', $this->shared->get( 'url' ) . 'admin/assets/js/jquery-ui-tooltip-init.js', 'jquery', $this->shared->get( 'ver' ) );
-			wp_enqueue_script( $this->shared->get( 'slug' ) . '-chosen', $this->shared->get( 'url' ) . 'admin/assets/inc/chosen/chosen-min.js', 'jquery', $this->shared->get( 'ver' ) );
-			wp_enqueue_script( $this->shared->get( 'slug' ) . '-chosen-init-options', $this->shared->get( 'url' ) . 'admin/assets/js/chosen-init-options.js', 'jquery', $this->shared->get( 'ver' ) );
+		// Menu Tools.
+		if ( $screen->id === $this->screen_id_tools ) {
+
+			wp_enqueue_script( $this->shared->get( 'slug' ) . '-menu', $this->shared->get( 'url' ) . 'admin/assets/js/framework-menu/menu.js', array( 'jquery' ), $this->shared->get( 'ver' ), true );
+
+		}
+
+		// Menu Maintenance.
+		if ( $screen->id === $this->screen_id_maintenance ) {
+
+			// Select2.
+			wp_enqueue_script(
+				$this->shared->get( 'slug' ) . '-select2',
+				$this->shared->get( 'url' ) . 'admin/assets/inc/select2/js/select2.min.js',
+				array( 'jquery' ),
+				$this->shared->get( 'ver' ),
+				true
+			);
+
+			wp_enqueue_script( $this->shared->get( 'slug' ) . '-menu', $this->shared->get( 'url' ) . 'admin/assets/js/framework-menu/menu.js', array( 'jquery' ), $this->shared->get( 'ver' ), true );
+
+			// Maintenance Menu.
+			wp_enqueue_script(
+				$this->shared->get( 'slug' ) . '-menu-maintenance',
+				$this->shared->get( 'url' ) . 'admin/assets/js/menu-maintenance.js',
+				array( 'jquery', 'jquery-ui-dialog', $this->shared->get( 'slug' ) . '-select2' ),
+				$this->shared->get( 'ver' ),
+				true
+			);
+			wp_localize_script(
+				$this->shared->get( 'slug' ) . '-menu-maintenance',
+				'objectL10n',
+				$wp_localize_script_data
+			);
+
+		}
+
+		// Menu options.
+		if ( $screen->id === $this->screen_id_options ) {
+
+			// Store the JavaScript parameters in the window.DAEXTDAEXTLNL_PARAMETERS object.
+			$initialization_script  = 'window.DAEXTLNL_PARAMETERS = {';
+			$initialization_script .= 'options_configuration_pages: ' . wp_json_encode( $this->shared->menu_options_configuration() );
+			$initialization_script .= '};';
+
+			wp_enqueue_script(
+				$this->shared->get( 'slug' ) . '-menu-options',
+				$this->shared->get( 'url' ) . 'admin/react/options-menu/build/index.js',
+				array( 'wp-element', 'wp-api-fetch', 'wp-i18n', 'wp-components' ),
+				$this->shared->get( 'ver' ),
+				true
+			);
+
+			wp_add_inline_script( $this->shared->get( 'slug' ) . '-menu-options', $initialization_script, 'before' );
+
+			wp_enqueue_script( $this->shared->get( 'slug' ) . '-menu', $this->shared->get( 'url' ) . 'admin/assets/js/framework-menu/menu.js', array( 'jquery' ), $this->shared->get( 'ver' ), true );
+
 		}
 	}
 
 	/**
-	 * plugin activation.
+	 * Plugin activation.
+	 *
+	 * @param bool $networkwide True if the plugin is being activated network-wide.
+	 *
+	 * @return void
 	 */
-	static public function ac_activate( $networkwide ) {
+	public static function ac_activate( $networkwide ) {
 
 		/**
 		 * Create options and tables for all the sites in the network.
 		 */
-		if ( function_exists( 'is_multisite' ) and is_multisite() ) {
+		if ( function_exists( 'is_multisite' ) && is_multisite() ) {
 
-			/**
-			 * If this is a "Network Activation" create the options and tables
-			 * for each blog.
-			 */
+			// If this is a "Network Activation" create the options and tables for each blog.
 			if ( $networkwide ) {
 
-				// get the current blog id.
+				// Get the current blog id.
 				global $wpdb;
 				$current_blog = $wpdb->blogid;
 
-				// create an array with all the blog ids.
+				// Create an array with all the blog ids.
+
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 				$blogids = $wpdb->get_col( "SELECT blog_id FROM $wpdb->blogs" );
 
-				// iterate through all the blogs.
+				// Iterate through all the blogs.
 				foreach ( $blogids as $blog_id ) {
 
-					// switch to the iterated blog.
+					// Switch to the iterated blog.
 					switch_to_blog( $blog_id );
 
-					// create options and tables for the iterated blog.
+					// Create options and tables for the iterated blog.
 					self::ac_initialize_options();
 					self::ac_create_database_tables();
 
 				}
 
-				// switch to the current blog.
+				// Switch to the current blog.
 				switch_to_blog( $current_blog );
 
 			} else {
-
-				/**
-				 * if this is not a "Network Activation" create options and
-				 * tables only for the current blog
+				/*
+				 * If this is not a "Network Activation" create options and
+				 * tables only for the current blog.
 				 */
 				self::ac_initialize_options();
 				self::ac_create_database_tables();
 
 			}
 		} else {
-
-			/**
+			/*
 			 * If this is not a multisite installation create options and
 			 * tables only for the current blog.
 			 */
@@ -250,36 +517,28 @@ class Daextlnl_Admin {
 	/**
 	 * Create the options and tables for the newly created blog.
 	 *
-	 * @param $blog_id
-	 * @param $user_id
-	 * @param $domain
-	 * @param $path
-	 * @param $site_id
-	 * @param $meta
+	 * @param int $blog_id The id of the blog.
 	 *
 	 * @return void
 	 */
-	public function new_blog_create_options_and_tables( $blog_id, $user_id, $domain, $path, $site_id, $meta ) {
+	public function new_blog_create_options_and_tables( $blog_id ) {
 
 		global $wpdb;
 
-		/**
-		 * If the plugin is "Network Active" create the options and tables for
-		 * this new blog.
-		 */
+		// If the plugin is "Network Active" create the options and tables for this new blog.
 		if ( is_plugin_active_for_network( 'uberchart/init.php' ) ) {
 
-			// get the id of the current blog.
+			// Get the id of the current blog.
 			$current_blog = $wpdb->blogid;
 
-			// switch to the blog that is being activated.
+			// Switch to the blog that is being activated.
 			switch_to_blog( $blog_id );
 
-			// create options and database tables for the new blog.
-			$this->ac_initialize_options();
-			$this->ac_create_database_tables();
+			// Create options and database tables for the new blog.
+			self::ac_initialize_options();
+			self::ac_create_database_tables();
 
-			// switch to the current blog.
+			// Switch to the current blog.
 			switch_to_blog( $current_blog );
 
 		}
@@ -288,7 +547,7 @@ class Daextlnl_Admin {
 	/**
 	 * Delete options and tables for the deleted blog.
 	 *
-	 * @param $blog_id
+	 * @param int $blog_id The id of the blog.
 	 *
 	 * @return void
 	 */
@@ -296,42 +555,51 @@ class Daextlnl_Admin {
 
 		global $wpdb;
 
-		// get the id of the current blog.
+		// Get the id of the current blog.
 		$current_blog = $wpdb->blogid;
 
-		// switch to the blog that is being activated.
+		// Switch to the blog that is being activated.
 		switch_to_blog( $blog_id );
 
-		// create options and database tables for the new blog.
+		// Create options and database tables for the new blog.
 		$this->un_delete_options();
 		$this->un_delete_database_tables();
 
-		// switch to the current blog.
+		// Switch to the current blog.
 		switch_to_blog( $current_blog );
 	}
 
 	/**
 	 * Initialize plugin options.
+	 *
+	 * @return void
 	 */
-	static private function ac_initialize_options() {
+	public static function ac_initialize_options() {
 
-		// assign an instance of Daextlnl_Shared.
-		$shared = Daextlnl_Shared::get_instance();
+		if ( intval( get_option( 'daextlnl_options_version' ), 10 ) < 1 ) {
 
-		// database version -----------------------------------------------------.
-		add_option( $shared->get( 'slug' ) . '_database_version', '0' );
+			// Assign an instance of Daextlnl_Shared.
+			$shared = Daextlnl_Shared::get_instance();
 
-		// general --------------------------------------------------------------.
-		add_option( $shared->get( 'slug' ) . '_detect_url_mode', 'wp_request' );
-		add_option( $shared->get( 'slug' ) . '_tickers_menu_capability', 'manage_options' );
-		add_option( $shared->get( 'slug' ) . '_featured_menu_capability', 'manage_options' );
-		add_option( $shared->get( 'slug' ) . '_sliding_menu_capability', 'manage_options' );
+			foreach ( $shared->get( 'options' ) as $key => $value ) {
+				add_option( $key, $value );
+			}
+
+			// Update options version.
+			update_option( 'daextlnl_options_version', '1' );
+
+		}
 	}
 
 	/**
 	 * Create the plugin database tables.
+	 *
+	 * @return void
 	 */
-	static private function ac_create_database_tables() {
+	public static function ac_create_database_tables() {
+
+		// Assign an instance of Daextlnl_Shared.
+		$shared = Daextlnl_Shared::get_instance();
 
 		global $wpdb;
 
@@ -339,16 +607,17 @@ class Daextlnl_Admin {
 		$charset_collate = $wpdb->get_charset_collate();
 
 		// Check database version and create the database.
-		if ( intval( get_option( 'daextlnl_database_version' ), 10 ) < 1 ) {
+		if ( intval( get_option( $shared->get( 'slug' ) . '_database_version' ), 10 ) < 2 ) {
 
 			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
 			// Create *prefix*_daextlnl_tickers.
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'daextlnl_tickers';
+			$table_name = $wpdb->prefix . $shared->get( 'slug' ) . '_tickers';
 			$sql        = "CREATE TABLE $table_name (
                   `name` varchar(100) NOT NULL DEFAULT '',
-                  `id` bigint(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                  `description` TEXT NOT NULL DEFAULT '',
+                  `id` BIGINT UNSIGNED AUTO_INCREMENT,
                   `target` int(11) NOT NULL DEFAULT '1',
                   `url` TEXT NOT NULL DEFAULT '',
                   `open_links_new_tab` tinyint(1) DEFAULT '0',
@@ -391,29 +660,31 @@ class Daextlnl_Admin {
                   `transient_expiration` int(11) NOT NULL DEFAULT '0',
                   `sliding_news_margin` int(11) NOT NULL DEFAULT '84',
                   `sliding_news_padding` int(11) NOT NULL DEFAULT '28',
-                  `url_mode` tinyint(1) DEFAULT '0'
+                  `url_mode` tinyint(1) DEFAULT '0',
+                  PRIMARY KEY  (id)
             ) $charset_collate";
 
 			dbDelta( $sql );
 
 			// Create *prefix*_daextlnl_featured_news.
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'daextlnl_featured_news';
+			$table_name = $wpdb->prefix . $shared->get( 'slug' ) . '_featured_news';
 			$sql        = "CREATE TABLE $table_name (
-                  `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                  `id` BIGINT UNSIGNED AUTO_INCREMENT,
                   `news_title` varchar(1000) NOT NULL DEFAULT '',
                   `news_excerpt` varchar(1000) NOT NULL DEFAULT '',
                   `url` varchar(2083) NOT NULL DEFAULT '',
-                  `ticker_id` bigint(20) NOT NULL
+                  `ticker_id` bigint(20) NOT NULL,
+                  PRIMARY KEY  (id)
             ) $charset_collate";
 
 			dbDelta( $sql );
 
-			// create *prefix*_daextlnl_sliding_news.
+			// Create *prefix*_daextlnl_sliding_news.
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'daextlnl_sliding_news';
+			$table_name = $wpdb->prefix . $shared->get( 'slug' ) . '_sliding_news';
 			$sql        = "CREATE TABLE $table_name (
-                  `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                  `id` BIGINT UNSIGNED AUTO_INCREMENT,
                   `news_title` varchar(1000) NOT NULL DEFAULT '',
                   `url` varchar(2083) NOT NULL DEFAULT '',
                   `ticker_id` bigint(20) NOT NULL,
@@ -422,54 +693,57 @@ class Daextlnl_Admin {
                   `background_color` varchar(7) DEFAULT NULL,
                   `background_color_opacity` float DEFAULT NULL,
                   `image_before` varchar(2083) NOT NULL DEFAULT '',
-                  `image_after` varchar(2083) NOT NULL DEFAULT ''
+                  `image_after` varchar(2083) NOT NULL DEFAULT '',
+                  PRIMARY KEY  (id)
             ) $charset_collate";
 
 			dbDelta( $sql );
 
 			// Update database version.
-			update_option( 'daextlnl_database_version', '1' );
+			update_option( $shared->get( 'slug' ) . '_database_version', '2' );
 
 		}
 	}
 
 	/**
 	 * Plugin delete.
+	 *
+	 * @return void
 	 */
 	public static function un_delete() {
-
-		/**
+		/*
 		 * Delete options and tables for all the sites in the network.
 		 */
-		if ( function_exists( 'is_multisite' ) and is_multisite() ) {
+		if ( function_exists( 'is_multisite' ) && is_multisite() ) {
 
-			// get the current blog id.
+			// Get the current blog id.
 			global $wpdb;
 			$current_blog = $wpdb->blogid;
 
-			// create an array with all the blog ids.
+			// Create an array with all the blog ids.
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$blogids = $wpdb->get_col( "SELECT blog_id FROM $wpdb->blogs" );
 
-			// iterate through all the blogs.
+			// Iterate through all the blogs.
 			foreach ( $blogids as $blog_id ) {
 
-				// switch to the iterated blog.
+				// Switch to the iterated blog.
 				switch_to_blog( $blog_id );
 
-				// create options and tables for the iterated blog.
+				// Create options and tables for the iterated blog.
 				self::un_delete_options();
 				self::un_delete_database_tables();
 
 			}
 
-			// switch to the current blog.
+			// Switch to the current blog.
 			switch_to_blog( $current_blog );
 
 		} else {
-
-			/**
-			 * If this is not a multisite installation delete options and
-			 * tables only for the current blog.
+			/*
+			 * if this is not a multisite installation delete options and
+			 * tables only for the current blog
 			 */
 			self::un_delete_options();
 			self::un_delete_database_tables();
@@ -479,135 +753,151 @@ class Daextlnl_Admin {
 
 	/**
 	 * Delete plugin options.
+	 *
+	 * @return void
 	 */
 	public static function un_delete_options() {
 
-		// assign an instance of Daextlnl_Shared.
+		// Assign an instance of Daextlnl_Shared.
 		$shared = Daextlnl_Shared::get_instance();
 
-		// database version -----------------------------------------------------.
-		delete_option( $shared->get( 'slug' ) . '_database_version' );
-
-		// general --------------------------------------------------------------.
-		delete_option( $shared->get( 'slug' ) . '_detect_url_mode' );
-		delete_option( $shared->get( 'slug' ) . '_tickers_menu_capability' );
-		delete_option( $shared->get( 'slug' ) . '_featured_menu_capability' );
-		delete_option( $shared->get( 'slug' ) . '_sliding_menu_capability' );
+		foreach ( $shared->get( 'options' ) as $key => $value ) {
+			delete_option( $key );
+		}
 	}
 
 	/**
 	 * Delete plugin database tables.
+	 *
+	 * @return void
 	 */
 	public static function un_delete_database_tables() {
 
-		// assign an instance of Daextlnl_Shared.
+		// Assign an instance of Daextlnl_Shared.
 		$shared = Daextlnl_Shared::get_instance();
 
 		global $wpdb;
 
-		// delete transients associated with the table prefix '_tickers'.
-		$table_name = $wpdb->prefix . $shared->get( 'slug' ) . '_tickers';
-		$results    = $wpdb->get_results( "SELECT id FROM $table_name", ARRAY_A );
+		// Delete transients associated with the table prefix '_tickers'.
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$results = $wpdb->get_results( "SELECT id FROM {$wpdb->prefix}daextlnl_tickers", ARRAY_A );
 		foreach ( $results as $result ) {
 			delete_transient( 'daextlnl_ticker_' . $result['id'] );
 		}
 
-		// delete table prefix + '_tickers'.
-		$table_name = $wpdb->prefix . $shared->get( 'slug' ) . '_tickers';
-		$sql        = "DROP TABLE $table_name";
-		$wpdb->query( $sql );
+		// Delete table prefix + '_tickers'.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->query( "DROP TABLE {$wpdb->prefix}daextlnl_tickers" );
 
-		// delete table prefix + '_featured_news'.
-		$table_name = $wpdb->prefix . $shared->get( 'slug' ) . '_featured_news';
-		$sql        = "DROP TABLE $table_name";
-		$wpdb->query( $sql );
+		// Delete table prefix + '_featured_news'.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->query( "DROP TABLE {$wpdb->prefix}daextlnl_featured_news" );
 
-		// delete table prefix + '_sliding_news'.
-		$table_name = $wpdb->prefix . $shared->get( 'slug' ) . '_sliding_news';
-		$sql        = "DROP TABLE $table_name";
-		$wpdb->query( $sql );
+		// Delete table prefix + '_sliding_news'.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->query( "DROP TABLE {$wpdb->prefix}daextlnl_sliding_news" );
 	}
 
 	/**
 	 * Register the admin menu.
+	 *
+	 * @return void
 	 */
 	public function me_add_admin_menu() {
 
+		$icon_svg = '
+		<svg id="globe" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 40 40">
+		  <defs>
+		    <style>
+		      .cls-1 {
+		        fill: #fff;
+		        stroke-width: 0;
+		      }
+		    </style>
+		  </defs>
+		  <path class="cls-1" d="M38,20c0-9.4-7.3-17.2-16.5-17.9-.5,0-1,0-1.5,0s-1,0-1.5,0C9.3,2.8,2,10.6,2,20s7.3,17.2,16.5,17.9c.5,0,1,0,1.5,0s1,0,1.5,0c9.2-.8,16.5-8.5,16.5-17.9ZM30,19c-.1-2.7-.7-5.2-1.6-7.6,1.3-.5,2.6-1.1,3.8-1.9,2.2,2.6,3.6,5.8,3.9,9.4h-6ZM21,4.4c1.8,1.7,3.4,3.6,4.6,5.8-1.5.4-3,.7-4.6.7v-6.6ZM19,11c-1.6,0-3.1-.3-4.6-.7,1.2-2.2,2.7-4.2,4.6-5.8v6.6ZM19,13v6h-7c.1-2.4.6-4.8,1.5-6.9,1.7.5,3.6.8,5.4.9ZM19,21v6c-1.9,0-3.7.4-5.4.9-.9-2.2-1.4-4.5-1.5-6.9h7ZM19,29v6.6c-1.8-1.7-3.4-3.6-4.6-5.8,1.5-.4,3-.7,4.6-.7ZM21,29c1.6,0,3.1.3,4.6.7-1.2,2.2-2.7,4.2-4.6,5.8v-6.6ZM21,27v-6h7c-.1,2.4-.6,4.8-1.5,6.9-1.7-.5-3.6-.8-5.4-.9ZM21,19v-6c1.9,0,3.7-.4,5.4-.9.9,2.2,1.4,4.5,1.5,6.9h-7ZM27.5,9.6c-.9-1.8-2.1-3.5-3.5-5.1,2.5.6,4.8,1.9,6.6,3.5-1,.6-2,1.1-3.1,1.5ZM12.5,9.6c-1.1-.4-2.1-.9-3.1-1.5,1.9-1.7,4.1-2.9,6.6-3.5-1.4,1.5-2.6,3.2-3.5,5.1ZM11.7,11.4c-.9,2.4-1.5,4.9-1.6,7.6h-6c.2-3.6,1.6-6.9,3.9-9.4,1.2.7,2.4,1.4,3.8,1.9ZM10,21c.1,2.7.7,5.2,1.6,7.6-1.3.5-2.6,1.1-3.8,1.9-2.2-2.6-3.6-5.8-3.9-9.4h6ZM12.5,30.4c.9,1.8,2.1,3.5,3.5,5.1-2.5-.6-4.8-1.9-6.6-3.5,1-.6,2-1.1,3.1-1.5ZM27.5,30.4c1.1.4,2.1.9,3.1,1.5-1.9,1.7-4.1,2.9-6.6,3.5,1.4-1.5,2.6-3.2,3.5-5.1ZM28.3,28.6c.9-2.4,1.5-4.9,1.6-7.6h6c-.2,3.6-1.6,6.9-3.9,9.4-1.2-.7-2.4-1.4-3.8-1.9Z"/>
+		</svg>';
+
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Base64 encoding is used to embed the SVG in the HTML.
+		$icon_svg = 'data:image/svg+xml;base64,' . base64_encode( $icon_svg );
+
 		add_menu_page(
-			esc_html__( 'LN', $this->shared->get( 'text_domain' ) ),
-			esc_html__( 'Live News', $this->shared->get( 'text_domain' ) ),
+			'LN',
+			esc_attr__( 'Live News', 'live-news-lite'),
 			get_option( $this->shared->get( 'slug' ) . '_tickers_menu_capability' ),
 			$this->shared->get( 'slug' ) . '-tickers',
 			array( $this, 'me_display_menu_tickers' ),
-			'dashicons-admin-site'
+			$icon_svg
 		);
 
 		$this->screen_id_tickers = add_submenu_page(
 			$this->shared->get( 'slug' ) . '-tickers',
-			esc_html__( 'News Tickers', $this->shared->get( 'text_domain' ) ),
-			esc_html__( 'News Tickers', $this->shared->get( 'text_domain' ) ),
+			esc_attr__( 'Tickers', 'live-news-lite'),
+			esc_attr__( 'Tickers', 'live-news-lite'),
 			get_option( $this->shared->get( 'slug' ) . '_tickers_menu_capability' ),
 			$this->shared->get( 'slug' ) . '-tickers',
 			array( $this, 'me_display_menu_tickers' )
 		);
 
-		$this->screen_id_featured = add_submenu_page(
+		$this->screen_id_featured_news = add_submenu_page(
 			$this->shared->get( 'slug' ) . '-tickers',
-			esc_html__( 'Featured News', $this->shared->get( 'text_domain' ) ),
-			esc_html__( 'Featured News', $this->shared->get( 'text_domain' ) ),
-			get_option( $this->shared->get( 'slug' ) . '_featured_menu_capability' ),
-			$this->shared->get( 'slug' ) . '-featured',
-			array( $this, 'me_display_menu_featured' )
+			esc_attr__( 'Featured News', 'live-news-lite'),
+			esc_attr__( 'Featured News', 'live-news-lite'),
+			get_option( $this->shared->get( 'slug' ) . '_featured_news_menu_capability' ),
+			$this->shared->get( 'slug' ) . '-featured-news',
+			array( $this, 'me_display_menu_featured_news' )
 		);
 
-		$this->screen_id_sliding = add_submenu_page(
+		$this->screen_id_sliding_news = add_submenu_page(
 			$this->shared->get( 'slug' ) . '-tickers',
-			esc_html__( 'Sliding News', $this->shared->get( 'text_domain' ) ),
-			esc_html__( 'Sliding News', $this->shared->get( 'text_domain' ) ),
-			get_option( $this->shared->get( 'slug' ) . '_sliding_menu_capability' ),
-			$this->shared->get( 'slug' ) . '-sliding',
-			array( $this, 'me_display_menu_sliding' )
+			esc_attr__( 'Sliding News', 'live-news-lite'),
+			esc_attr__( 'Sliding News', 'live-news-lite'),
+			get_option( $this->shared->get( 'slug' ) . '_sliding_news_menu_capability' ),
+			$this->shared->get( 'slug' ) . '-sliding-news',
+			array( $this, 'me_display_menu_sliding_news' )
 		);
 
-		$this->screen_id_export_to_pro = add_submenu_page(
+		$this->screen_id_tools = add_submenu_page(
 			$this->shared->get( 'slug' ) . '-tickers',
-			esc_html__( 'Export to Pro', $this->shared->get( 'text_domain' ) ),
-			esc_html__( 'Export to Pro', $this->shared->get( 'text_domain' ) ),
-			'manage_options',
-			$this->shared->get( 'slug' ) . '-export-to-pro',
-			array( $this, 'me_display_menu_export_to_pro' )
+			esc_attr__( 'Tools', 'live-news-lite'),
+			esc_attr__( 'Tools', 'live-news-lite'),
+			get_option( $this->shared->get( 'slug' ) . '_tools_menu_capability' ),
+			$this->shared->get( 'slug' ) . '-tools',
+			array( $this, 'me_display_menu_tools' )
 		);
 
-		$this->screen_id_help = add_submenu_page(
+		$this->screen_id_maintenance = add_submenu_page(
 			$this->shared->get( 'slug' ) . '-tickers',
-			esc_html__( 'Help', $this->shared->get( 'text_domain' ) ),
-			esc_html__( 'Help', $this->shared->get( 'text_domain' ) ),
-			'manage_options',
-			$this->shared->get( 'slug' ) . '-help',
-			array( $this, 'me_display_menu_help' )
-		);
-
-		$this->screen_id_pro_version = add_submenu_page(
-			$this->shared->get( 'slug' ) . '-tickers',
-			esc_html__( 'Pro Version', $this->shared->get( 'text_domain' ) ),
-			esc_html__( 'Pro Version', $this->shared->get( 'text_domain' ) ),
-			'manage_options',
-			$this->shared->get( 'slug' ) . '-pro-version',
-			array( $this, 'me_display_menu_pro_version' )
+			esc_attr__( 'Maintenance', 'live-news-lite'),
+			esc_attr__( 'Maintenance', 'live-news-lite'),
+			get_option( $this->shared->get( 'slug' ) . '_maintenance_menu_capability' ),
+			$this->shared->get( 'slug' ) . '-maintenance',
+			array( $this, 'me_display_menu_maintenance' )
 		);
 
 		$this->screen_id_options = add_submenu_page(
 			$this->shared->get( 'slug' ) . '-tickers',
-			esc_html__( 'Options', $this->shared->get( 'text_domain' ) ),
-			esc_html__( 'Options', $this->shared->get( 'text_domain' ) ),
+			esc_attr__( 'Options', 'live-news-lite'),
+			esc_attr__( 'Options', 'live-news-lite'),
 			'manage_options',
 			$this->shared->get( 'slug' ) . '-options',
 			array( $this, 'me_display_menu_options' )
+		);
+
+		add_submenu_page(
+			$this->shared->get( 'slug' ) . '-tickers',
+			esc_html__( 'Help & Support', 'live-news-lite'),
+			esc_html__( 'Help & Support', 'live-news-lite') . '<i class="dashicons dashicons-external" style="font-size:12px;vertical-align:-2px;height:10px;"></i>',
+			'manage_options',
+			'https://daext.com/doc/live-news/',
 		);
 	}
 
 	/**
 	 * Includes the tickers view.
+	 *
+	 * @return void
 	 */
 	public function me_display_menu_tickers() {
 		include_once 'view/tickers.php';
@@ -615,265 +905,47 @@ class Daextlnl_Admin {
 
 	/**
 	 * Includes the featured view.
+	 *
+	 * @return void
 	 */
-	public function me_display_menu_featured() {
-		include_once 'view/featured.php';
+	public function me_display_menu_featured_news() {
+		include_once 'view/featured-news.php';
 	}
 
 	/**
 	 * Includes the sliding view.
+	 *
+	 * @return void
 	 */
-	public function me_display_menu_sliding() {
-		include_once 'view/sliding.php';
+	public function me_display_menu_sliding_news() {
+		include_once 'view/sliding-news.php';
 	}
 
 	/**
-	 * Includes the export to pro view.
+	 * Includes the tools view.
+	 *
+	 * @return void
 	 */
-	public function me_display_menu_export_to_pro() {
-		include_once 'view/export_to_pro.php';
+	public function me_display_menu_tools() {
+		include_once 'view/tools.php';
 	}
 
 	/**
-	 * Includes the help view.
+	 * Includes the maintenance view.
+	 *
+	 * @return void
 	 */
-	public function me_display_menu_help() {
-		include_once 'view/help.php';
-	}
-
-	/**
-	 * Includes the pro version view.
-	 */
-	public function me_display_menu_pro_version() {
-		include_once 'view/pro_version.php';
+	public function me_display_menu_maintenance() {
+		include_once 'view/maintenance.php';
 	}
 
 	/**
 	 * Includes the options view.
+	 *
+	 * @return void
 	 */
 	public function me_display_menu_options() {
 		include_once 'view/options.php';
 	}
 
-	/**
-	 * Register options.
-	 */
-	public function op_register_options() {
-
-		// section general ----------------------------------------------------------.
-		add_settings_section(
-			'daextlnl_general_settings_section',
-			null,
-			null,
-			'daextlnl_general_options'
-		);
-
-		add_settings_field(
-			'detect_url_mode',
-			esc_html__( 'Detect URL Mode', $this->shared->get( 'text_domain' ) ),
-			array( $this, 'detect_url_mode_callback' ),
-			'daextlnl_general_options',
-			'daextlnl_general_settings_section'
-		);
-
-		register_setting(
-			'daextlnl_general_options',
-			'daextlnl_detect_url_mode',
-			array( $this, 'detect_url_mode_validation' )
-		);
-
-		add_settings_field(
-			'tickers_menu_capability',
-			esc_html__( 'Tickers Menu Capability', $this->shared->get( 'text_domain' ) ),
-			array( $this, 'tickers_menu_capability_callback' ),
-			'daextlnl_general_options',
-			'daextlnl_general_settings_section'
-		);
-
-		register_setting(
-			'daextlnl_general_options',
-			'daextlnl_tickers_menu_capability',
-			array( $this, 'tickers_menu_capability_validation' )
-		);
-
-		add_settings_field(
-			'featured_menu_capability',
-			esc_html__( 'Featured News Menu Capability', $this->shared->get( 'text_domain' ) ),
-			array( $this, 'featured_menu_capability_callback' ),
-			'daextlnl_general_options',
-			'daextlnl_general_settings_section'
-		);
-
-		register_setting(
-			'daextlnl_general_options',
-			'daextlnl_featured_menu_capability',
-			array( $this, 'featured_menu_capability_validation' )
-		);
-
-		add_settings_field(
-			'sliding_menu_capability',
-			esc_html__( 'Sliding News Menu Capability', $this->shared->get( 'text_domain' ) ),
-			array( $this, 'sliding_menu_capability_callback' ),
-			'daextlnl_general_options',
-			'daextlnl_general_settings_section'
-		);
-
-		register_setting(
-			'daextlnl_general_options',
-			'daextlnl_sliding_menu_capability',
-			array( $this, 'sliding_menu_capability_validation' )
-		);
-	}
-
-
-	public function detect_url_mode_callback( $args ) {
-
-		$html  = '<select id="daextlnl-detect-url-mode" name="daextlnl_detect_url_mode" class="daext-display-none">';
-		$html .= '<option ' . selected( get_option( 'daextlnl_detect_url_mode' ), 'server_variable', false ) . ' value="server_variable">' . esc_attr__( 'Server Variable', $this->shared->get( 'text_domain' ) ) . '</option>';
-		$html .= '<option ' . selected( get_option( 'daextlnl_detect_url_mode' ), 'wp_request', false ) . ' value="wp_request">' . esc_attr__( 'WP Request', $this->shared->get( 'text_domain' ) ) . '</option>';
-		$html .= '</select>';
-		$html .= '<div class="help-icon" title="' . esc_attr__( 'Select the method used to detect the URL of the page.', $this->shared->get( 'text_domain' ) ) . '"></div>';
-
-		echo $html;
-	}
-
-	public function detect_url_mode_validation( $input ) {
-
-		if ( $input === 'server_variable' or $input === 'wp_request' ) {
-			$output = $input;
-		} else {
-			$output = 'server_variable';
-		}
-
-		return $output;
-	}
-
-	public function tickers_menu_capability_callback( $args ) {
-
-		$html  = '<input autocomplete="off" type="text" id="daextlnl-tickers-menu-capability" name="daextlnl_tickers_menu_capability" class="regular-text" value="' . esc_attr( get_option( 'daextlnl_tickers_menu_capability' ) ) . '" />';
-		$html .= '<div class="help-icon" title="' . esc_attr__( 'The capability required to get access on the "News Tickers" menu.', $this->shared->get( 'text_domain' ) ) . '"></div>';
-
-		echo $html;
-	}
-
-	public function tickers_menu_capability_validation( $input ) {
-
-		return sanitize_key( $input );
-	}
-
-	public function featured_menu_capability_callback( $args ) {
-
-		$html  = '<input autocomplete="off" type="text" id="daextlnl-featured-menu-capability" name="daextlnl_featured_menu_capability" class="regular-text" value="' . esc_attr( get_option( 'daextlnl_featured_menu_capability' ) ) . '" />';
-		$html .= '<div class="help-icon" title="' . esc_attr__( 'The capability required to get access on the "Featured News" menu.', $this->shared->get( 'text_domain' ) ) . '"></div>';
-
-		echo $html;
-	}
-
-	public function featured_menu_capability_validation( $input ) {
-
-		return sanitize_key( $input );
-	}
-
-	public function sliding_menu_capability_callback( $args ) {
-
-		$html  = '<input autocomplete="off" type="text" id="daextlnl-sliding-menu-capability" name="daextlnl_sliding_menu_capability" class="regular-text" value="' . esc_attr( get_option( 'daextlnl_sliding_menu_capability' ) ) . '" />';
-		$html .= '<div class="help-icon" title="' . esc_attr__( 'The capability required to get access on the "Sliding News" menu.', $this->shared->get( 'text_domain' ) ) . '"></div>';
-
-		echo $html;
-	}
-
-	public function sliding_menu_capability_validation( $input ) {
-
-		return sanitize_key( $input );
-	}
-
-	/**
-	 * Echo all the dismissible notices based on the values of the $notices array.
-	 *
-	 * @param $notices
-	 */
-	public function dismissible_notice( $notices ) {
-
-		foreach ( $notices as $key => $notice ) {
-			echo '<div class="' . esc_attr( $notice['class'] ) . ' settings-error notice is-dismissible below-h2"><p>' . esc_html( $notice['message'] ) . '</p></div>';
-		}
-	}
-
-	/*
-	 * The click on the "Export" button available in the "Export to Pro" menu is intercepted and the method that
-	 * generates the downloadable XML file is called.
-	 */
-	public function export_xml_controller() {
-
-		/*
-		 * Intercept requests that come from the "Export" button of the "Export" menu and generate the downloadable XML
-		 * file.
-		 */
-		if ( isset( $_POST['daextlnl_export'] ) ) {
-
-			// verify capability
-			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'You do not have sufficient permissions to access this page.' ) );
-			}
-
-			// generate the header of the XML file
-			header( 'Content-Encoding: UTF-8' );
-			header( 'Content-type: text/xml; charset=UTF-8' );
-			header( 'Content-Disposition: attachment; filename=live-news-' . time() . '.xml' );
-			header( 'Pragma: no-cache' );
-			header( 'Expires: 0' );
-
-			// generate initial part of the XML file
-			$out  = '<?xml version="1.0" encoding="UTF-8" ?>';
-			$out .= '<root>';
-
-			// Generate the XML of the various db tables
-			$out .= $this->shared->convert_db_table_to_xml( 'tickers', 'id' );
-			$out .= $this->shared->convert_db_table_to_xml( 'featured_news', 'id' );
-			$out .= $this->shared->convert_db_table_to_xml( 'sliding_news', 'id' );
-
-			// generate the final part of the XML file
-			$out .= '</root>';
-
-			echo $out;
-			die();
-
-		}
-	}
-
-
-	/**
-	 * Change the WordPress footer text on all the plugin menus.
-	 */
-	public function change_footer_text() {
-
-		$screen = get_current_screen();
-
-		if ( $screen->id == $this->screen_id_tickers or
-			$screen->id == $this->screen_id_featured or
-			$screen->id == $this->screen_id_sliding or
-			$screen->id == $this->screen_id_export_to_pro or
-			$screen->id == $this->screen_id_help or
-			$screen->id == $this->screen_id_pro_version or
-			$screen->id == $this->screen_id_options ) {
-
-			echo '<a target="_blank" href="http://wordpress.org/support/plugin/live-news-lite#postform">' . esc_attr__(
-				'Contact Support',
-				$this->shared->get( 'text_domain' )
-			) . '</a> | ' .
-				'<a target="_blank" href="https://translate.wordpress.org/projects/wp-plugins/live-news-lite/">' . esc_attr__(
-					'Translate',
-					$this->shared->get( 'text_domain' )
-				) . '</a> | ' .
-				str_replace(
-					array( '[stars]', '[wp.org]' ),
-					array(
-						'<a target="_blank" href="https://wordpress.org/support/plugin/live-news-lite/reviews/?filter=5">&#9733;&#9733;&#9733;&#9733;&#9733;</a>',
-						'<a target="_blank" href="http://wordpress.org/plugins/live-news-lite/" >wordpress.org</a>',
-					),
-					__( 'Add your [stars] on [wp.org] to spread the love.', $this->shared->get( 'text_domain' ) )
-				);
-
-		}
-	}
 }
