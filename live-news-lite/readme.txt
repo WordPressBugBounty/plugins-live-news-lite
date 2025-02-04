@@ -176,8 +176,19 @@ With this procedure you will be able to perform a **Single Site Activation** in 
 * Initial release.
 
 == Screenshots ==
-1. News Tickers menu
-2. Featured News menu
-3. Sliding News menu
-4. Options menu
-5. News ticker in the front-end
+1. Tickers menu.
+2. Tickers menu in edit mode.
+3. The "Placement" section of the Tickers menu.
+4. The "Layout" section of the Tickers menu.
+5. The "Style" section of the Tickers menu.
+6. The "Performance" and "Advanced" sections of the Tickers menu.
+7. Featured News menu.
+8. Featured News menu in edit mode.
+9. Sliding News menu.
+10. Sliding News menu in edit mode.
+11. Tools menu.
+12. Maintenance menu.
+13. Options menu.
+14. A news ticker is used to display the latest news on the front end of a WordPress site.
+15. A news ticker is used to display financial data on the front end of a WordPress site.
+16. A news ticker is used to display sports results on the front end of a WordPress site.
