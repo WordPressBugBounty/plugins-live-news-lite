@@ -3,9 +3,9 @@ Contributors: DAEXT
 Tags: news ticker, ticker, news, live, breaking news
 Donate link: https://daext.com
 Requires at least: 5.0
-Tested up to: 6.7
+Tested up to: 6.8.1
 Requires PHP: 7.2
-Stable tag: 1.09
+Stable tag: 1.10
 License: GPLv3
 
 Generate a news ticker to communicate the latest updates, including financial news, weather warnings, election results, sports scores, and more.
@@ -90,7 +90,7 @@ This plugin makes use of the following resources:
 
 * [Mobile Detect JS](https://github.com/hgoebl/mobile-detect.js) licensed under the [MIT License](http://www.opensource.org/licenses/mit-license.php)
 * [Moment.js](http://momentjs.com) licensed under the [MIT License](http://www.opensource.org/licenses/mit-license.php)
-* [Chosen](https://github.com/harvesthq/chosen) licensed under the [MIT License](http://www.opensource.org/licenses/mit-license.php)
+* [Select2](https://select2.org/) licensed under the [MIT License](http://www.opensource.org/licenses/mit-license.php)
 
 == Installation ==
 = Installation (Single Site) =
@@ -120,6 +120,14 @@ With this procedure you will be able to perform a **Single Site Activation** in 
 3. Click on the **Activate** button (just below the name of the plugin)
 
 == Changelog ==
+
+= 1.10 =
+
+*May 11, 2025*
+
+* Fixed PHP notice caused by early use of translation functions.
+* Fixed JavaScript deprecation notices for back-end functionality.
+* Resolved CSS style issue.
 
 = 1.09 =
 

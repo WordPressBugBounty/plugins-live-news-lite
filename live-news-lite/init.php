@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Live News
  * Description: The Live News plugin generates a fixed news ticker that you can use to communicate the latest news, financial news, weather warnings, election results, sports results, etc. (Lite version)
- * Version: 1.09
+ * Version: 1.10
  * Author: DAEXT
  * Author URI: https://daext.com
  * Text Domain: live-news-lite

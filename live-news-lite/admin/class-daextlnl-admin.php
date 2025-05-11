@@ -94,6 +94,32 @@ class Daextlnl_Admin {
 		// This hook is triggered during the deletion of a blog.
 		add_action( 'delete_blog', array( $this, 'delete_blog_delete_options_and_tables' ), 10, 1 );
 
+		// Require and instantiate the related classes used to handle the menus.
+		add_action( 'init', array( $this, 'handle_menus' ) );
+
+	}
+
+	/**
+	 * Return an instance of this class.
+	 *
+	 * @return self|null
+	 */
+	public static function get_instance() {
+
+		if ( null === self::$instance ) {
+			self::$instance = new self();
+		}
+
+		return self::$instance;
+	}
+
+	/**
+	 * If we are in one of the plugin back-end menus require and instantiate the related class used to handle the menu.
+	 *
+	 * @return void
+	 */
+	public function handle_menus() {
+
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce non-necessary for menu selection.
 		$page_query_param = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : null;
 
@@ -172,20 +198,7 @@ class Daextlnl_Admin {
 				$this->menu_elements = new Daextlnl_Options_Menu_Elements( $this->shared, $page_query_param, $config );
 			}
 		}
-	}
 
-	/**
-	 * Return an instance of this class.
-	 *
-	 * @return self|null
-	 */
-	public static function get_instance() {
-
-		if ( null === self::$instance ) {
-			self::$instance = new self();
-		}
-
-		return self::$instance;
 	}
 
 	/**
